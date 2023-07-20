@@ -136,3 +136,108 @@ chisq.test(data)
 
 # 결론: 나이와 교육수준 사이에 관계가 있음
 
+
+
+############################
+############# T-검정
+## t.test(formula, data = ,
+##  paired = FALSE
+## alternative = "two.sided"
+## val.equal = FALSE
+# conf.level)
+
+df <- read.csv("buy.csv", header = TRUE)
+df <- na.omit(df)
+
+# 변수 age 범주화(young, old)
+df$yage <- ifelse(df$age < 4, 1, 0)
+df$yage <- factor(df$yage, levels = c(1,0), labels = c("Young", "Old"))
+head(df)
+
+# 탐색적 자료분석
+# 도수분포표
+table(df$yage)
+
+# yage 수준별로 prod변수 summary
+with(df, tapply(prod, yage, summary))
+
+
+# 상자 도표
+ggplot(df, aes(yage, prod)) +
+  geom_boxplot() + xlab("age")
+
+# 히스토그램
+ggplot(df, aes(x = prod)) +
+  geom_histogram(bidwidth = 1.5) +
+  facet_grid(yage ~ .) +
+  ggtitle("histogram of prod by Age")
+
+shapiro.test(df$prod[df$yage == "Young"])
+shapiro.test(df$prod[df$yage == "Old"])
+
+with(df, tapply(prod, yage, shapiro.test))
+
+# (2) 분산의 동일성 검정 
+var.test(prod ~ yage, data = df)
+
+# (3) 독립표본 T검정
+t.test(prod ~ yage, data = df,
+       alternative = "two.sided",
+       var.equal = FALSE,
+       conf.level = 0.95
+       )
+
+# 두 수면제의 효과에 차이가 있는지 보기
+head(sleep)
+
+# (1) 개인별 자료인 경우
+sleep <- sleep[order(sleep$group, sleep$ID),]
+sleep
+t.test(extra ~ group, sleep, paired = TRUE)
+
+
+# (2) 반응값별 자료인 경우
+sleep_wide <- sleep[order(sleep$group, sleep$ID),]
+t.test(extra ~ group, sleep, paired = TRUE)
+
+sleep_wide <- data.frame(ID = 1:10, 
+                         group1 = sleep$extra[1:10],
+                         group2 = sleep$extra[11:20])
+sleep_wide
+
+t.test(sleep_wide$group1, sleep_wide$group2, paired = TRUE)
+t.test(sleep_wide$group1 - sleep_wide$group2, mu = 0)
+
+
+## 연령 그룹(30대 미만/ 30대 이상)에 따라 수입의 평균이 다른지 알아보시오
+buy <- read.csv("buy.csv")
+head(buy)
+# age 범주화
+buy$yage <- ifelse(buy$age < 3, 1, 0)
+buy$yage <- factor(buy$yage, levels = c(1, 0), labels = c("30대 미만", "30대 이상"))
+head(buy)
+
+table(buy$yage)
+
+with(buy, tapply(income, yage, summary))
+
+ggplot(buy, aes(x = income)) +
+  geom_histogram() +
+  facet_grid(yage ~.)
+
+var.test(income ~ yage, data = buy)
+t.test(income ~ yage, data = buy,
+       alternative = "two.sided",
+       var.equal = FALSE,
+       conf.level = 0.95)
+# t.test(income ~ age, buy, paired = TRUE)
+
+
+########## 분산분석
+
+
+
+
+###################
+##### 회귀분석
+
