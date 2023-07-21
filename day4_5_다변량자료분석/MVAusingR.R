@@ -194,11 +194,16 @@ M2=Mclust(x,G=2,modelNames ="E")  # K=2 with equal variance
 M2$parameters     # 추정 모수
 M2$z[,2]>0.5
 
+# 클수록 좋다
+M1$bic
+M2$bic
+ 
 
 ## ----------------------------------------------------------------
-# 자료 불러오기
+# 자료 불러오기i
 challenger <- read.csv('https://bit.ly/2YPCg4V')
 str(challenger)
+challenger
 # 간단한 시각화 
 library(ggplot2)   
 # 온도와 실패횟수의 관계
@@ -242,11 +247,13 @@ yobs=test$income
 yhat=predict(fit1, newdata=test, type="response")
 ggplot(data.frame(yobs,yhat),aes(yobs,yhat,group=yobs,fill=yobs)) + geom_boxplot()
 # 혼동행렬
+install.packages("caret")
 library(caret)
 yhat1 = as.factor(ifelse(yhat>0.5,">50K","<=50K"))
 confusionMatrix(yhat1, factor(yobs))
 table(yhat1,yobs)
 # ROC 곡선
+install.packages("ROCR")
 library(ROCR)
 pred = prediction(yhat,yobs)
 perf = performance(pred,measure = "tpr", x.measure = "fpr")
@@ -264,8 +271,8 @@ plot(dt)
 text(dt, use.n=TRUE)
 # 모형평가
 yhat_tr = predict(dt,test)[,">50K"]
-ggplot(data.frame(yobs,yhat_tr),aes(yobs,yhat_tr,group=yobs,fill=yobs)) 
-          + geom_boxplot()
+ggplot(data.frame(yobs,yhat_tr),aes(yobs,yhat_tr,group=yobs,fill=yobs)) +
+  geom_boxplot()
 # 혼동행렬
 yhat_tr1 = as.factor(ifelse(yhat_tr>0.5,">50K","<=50K"))
 confusionMatrix(yhat_tr1, factor(yobs))
@@ -282,6 +289,7 @@ performance(pred_tr,"auc")@y.values
 
 ## ----------------------------------------------------------------
 # 랜덤포레스트
+# install.packages("randomForest")
 library(randomForest)
 (rf = randomForest(factor(income)~race+age+sex+hours_per_week+educatoin_num, data=training))
 varImpPlot(rf)  # 변수중요도 
@@ -295,3 +303,16 @@ plot(perf_tr, col=4, add=TRUE) # 단일나무모형과의 비교
 abline(a=0,b=1)
 performance(pred_rf,"auc")@y.values
 
+?randomForest
+# tree개수 바꿔보기
+(rf = randomForest(factor(income)~race+age+sex+hours_per_week+educatoin_num, , ntree = 2000, data=training))
+varImpPlot(rf)  # 변수중요도 
+# 모형평가
+yhat_rf = predict(rf,test,type="prob")[,">50K"]
+pred_rf = prediction(yhat_rf,yobs)
+perf_rf = performance(pred_rf,measure = "tpr", x.measure = "fpr")
+plot(perf_rf, col=3, main="ROC curve")
+plot(perf, col=2, add=TRUE) # 로지스틱과의 비교
+plot(perf_tr, col=4, add=TRUE) # 단일나무모형과의 비교
+abline(a=0,b=1)
+performance(pred_rf,"auc")@y.values
